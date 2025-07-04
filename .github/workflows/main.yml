@@ -8,6 +8,7 @@ permissions:
   contents: read
   id-token: write
   pull-requests: write
+  pages: write
 concurrency:
   group: 'pages'
   cancel-in-progress: true
