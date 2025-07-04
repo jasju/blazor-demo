@@ -1,0 +1,78 @@
+name: deploy
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+permissions:
+  contents: read
+  id-token: write
+  pull-requests: write
+concurrency:
+  group: 'pages'
+  cancel-in-progress: true
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: https://{{ github.repository_owner }}.github.io/{{ github.event.repository.name }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+      - name: Restore dependencies
+        run: dotnet restore
+      - name: Publish Blazor WASM
+        run: dotnet publish -c Release -o published
+      - name: Install GitHub Actions Deploy Tool
+        run: dotnet tool install --global GitHubActionsDeploy
+      - name: Deploy to GitHub Pages
+        run: |
+          gh-pages --source published --branch gh-pages --message "Deploy to GitHub Pages" --token ${{ secrets.GITHUB_TOKEN }}
+  # deploy:
+  #   environment:
+  #     name: github_pages
+  #     url: 
+  #   runs-on: ubuntu-latest
+  #   needs: publish
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - name: Set up .NET
+  #       uses: actions/setup-dotnet@v4
+  #       with:
+  #         dotnet-version: '9.0.x'
+  #     - name: Restore dependencies
+  #       run: dotnet restore
+  #     - name: Deploy to GitHub Pages
+  #       run: |
+  #         dotnet tool install --global GitHubActionsDeploy
+  #         gh-pages --source published --branch gh-pages --message "Deploy to GitHub Pages" --token ${{ secrets.GITHUB_TOKEN }}        
+  # build:
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v3
+  #     - name: Set up .NET
+  #       uses: actions/setup-dotnet@v3
+  #       with:
+  #         dotnet-version: '7.0.x'
+  #     - name: Restore dependencies
+  #       run: dotnet restore
+  #     - name: Build
+  #       run: dotnet build --no-restore
+  # publish:
+  #   runs-on: ubuntu-latest
+  #   needs: build
+  #   steps:
+  #   - uses: actions/checkout@v3
+  #   - name: Set up .NET
+  #     uses: actions/setup-dotnet@v3
+  #     with:
+  #       dotnet-version: '7.0.x'
+  #   - name: Restore dependencies
+  #     run: dotnet restore
+  #   - name: Publish Blazor WASM
+  #     run: dotnet publish -c Release -o published
+  
