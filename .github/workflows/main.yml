@@ -12,26 +12,40 @@ concurrency:
   group: 'pages'
   cancel-in-progress: true
 jobs:
-  deploy:
+  build:
     environment:
       name: github-pages
       url: https://{{ github.repository_owner }}.github.io/{{ github.event.repository.name }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
       - name: Set up .NET
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '9.0.x'
-      - name: Restore dependencies
-        run: dotnet restore
-      - name: Publish Blazor WASM
-        run: dotnet publish -c Release -o published
-      - name: Install GitHub Actions Deploy Tool
-        run: dotnet tool install --global GitHubActionsDeploy
+      - name: Prepare Blazor WASM for GitHub Pages
+        uses: na1307/blazor-github-pages@v3
+        id: prepare
+        with:
+          project-path: BlazorApp1/BlazorApp1.csproj
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ${{ steps.prepare.outputs.wwwroot-path }}
+  # Deployment job
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
       - name: Deploy to GitHub Pages
-        run: |
-          gh-pages --source published --branch gh-pages --message "Deploy to GitHub Pages" --token ${{ secrets.GITHUB_TOKEN }}
+        id: deployment
+        uses: actions/deploy-pages@v4
   # deploy:
   #   environment:
   #     name: github_pages
